@@ -22,12 +22,6 @@ export default {
   },
   module: {
     rules: [
-      // Обработка стилей из src
-      {
-        test: /\.css$/i,
-        include: resolve(__dirname, 'src'),
-        use: [MiniCssExtractPlugin.loader, 'css-loader'],
-      },
       // Обработка изображений из assets
       {
         test: /\.(jpe?g|png|gif|svg)$/i,
@@ -63,11 +57,7 @@ export default {
         {
           from: "src/assets",
           to: "assets",
-        },
-        {
-          from: "src/*.css",
-          to: "[name][ext]",
-        },
+        }
       ],
     }),
     new ImageMinimizerPlugin({
