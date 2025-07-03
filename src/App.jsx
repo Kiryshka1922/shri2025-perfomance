@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, memo } from "react";
+import React, { useMemo, useCallback, memo, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 
 // Оптимизируем Header с помощью memo, чтобы он не перерендеривался без необходимости
@@ -60,21 +60,15 @@ const Header = memo(function Header() {
 // Оптимизируем Event с помощью memo
 const Event = memo(function Event(props) {
   const ref = React.useRef();
-
   const { onSize, slim, icon, iconLabel, title, subtitle } = props;
 
-  // Используем useCallback для оптимизации колбэка
-  const handleSize = useCallback(() => {
+  React.useEffect(() => {
     if (ref.current && onSize) {
       const width = ref.current.offsetWidth;
       const height = ref.current.offsetHeight;
       onSize({ width, height });
     }
   }, [onSize]);
-
-  React.useEffect(() => {
-    handleSize();
-  }, [handleSize]);
 
   return (
     <li ref={ref} className={"event" + (slim ? " event_slim" : "")}>
@@ -91,7 +85,7 @@ const Event = memo(function Event(props) {
   );
 });
 
-// Выносим константу TABS за пределы компонента, чтобы она не пересоздавалась
+
 const TABS = {
   all: {
     title: "Все",
@@ -235,6 +229,7 @@ const Main = memo(function Main() {
   const initedRef = React.useRef(false);
   const [activeTab, setActiveTab] = React.useState("");
   const [hasRightScroll, setHasRightScroll] = React.useState(false);
+  const [itemSizes, setItemSizes] = React.useState([]);
 
   const onTabClick = useCallback((key) => {
     setActiveTab(key);
@@ -260,27 +255,36 @@ const Main = memo(function Main() {
     return TABS[activeTab]?.items || [];
   }, [activeTab]);
 
+  const handleSize = useCallback((size, index) => {
+    setItemSizes((prev) => {
+      const newSizes = [...prev];
+      newSizes[index] = size;
+      return newSizes;
+    });
+  }, []);
+
   const renderTabItems = useMemo(() => {
     return currentTabItems.map((item, index) => (
-      <Event key={index} {...item} onSize={handleSize} />
+      <Event key={index} {...item} onSize={(size) => handleSize(size, index)} />
     ));
-  }, [currentTabItems]);
+  }, [currentTabItems, handleSize]);
 
-  const handleSize = useCallback(() => {
-    if (ref.current) {
-      const items = ref.current.querySelectorAll(".event");
-      let sumWidth = 0;
+  useEffect(() => {
+    if (ref.current && itemSizes.length > 0) {
+      const panel = ref.current.querySelector(
+        ".section__panel:not(.section__panel_hidden)"
+      );
+      if (!panel) return;
 
-      items.forEach((item) => {
-        sumWidth += item.offsetWidth;
-      });
+      const panelWidth = panel.offsetWidth;
+      const sumWidth = itemSizes.reduce(
+        (sum, size) => sum + (size?.width || 0),
+        0
+      );
 
-      const newHasRightScroll = sumWidth > ref.current.offsetWidth;
-      if (newHasRightScroll !== hasRightScroll) {
-        setHasRightScroll(newHasRightScroll);
-      }
+      setHasRightScroll(sumWidth > panelWidth);
     }
-  }, [hasRightScroll]);
+  }, [itemSizes, activeTab]);
 
   React.useEffect(() => {
     if (!activeTab && !initedRef.current) {
@@ -402,50 +406,51 @@ const Main = memo(function Main() {
             ))}
           </select>
 
-      <ul role="tablist" className="section__tabs">
-        {TABS_KEYS.map((key) => (
-          <li
-            key={key}
-            role="tab"
-            aria-selected={key === activeTab ? "true" : "false"}
-            tabIndex={key === activeTab ? "0" : undefined}
-            className={
-              "section__tab" + (key === activeTab ? " section__tab_active" : "")
-            }
-            id={`tab_${key}`}
-            aria-controls={`panel_${key}`}
-            onClick={() => onTabClick(key)}
-          >
-            {TABS[key].title}
-          </li>
-        ))}
-      </ul>
-      </div>
+          <ul role="tablist" className="section__tabs">
+            {TABS_KEYS.map((key) => (
+              <li
+                key={key}
+                role="tab"
+                aria-selected={key === activeTab ? "true" : "false"}
+                tabIndex={key === activeTab ? "0" : undefined}
+                className={
+                  "section__tab" +
+                  (key === activeTab ? " section__tab_active" : "")
+                }
+                id={`tab_${key}`}
+                aria-controls={`panel_${key}`}
+                onClick={() => onTabClick(key)}
+              >
+                {TABS[key].title}
+              </li>
+            ))}
+          </ul>
+        </div>
 
-      {/* Оптимизируем рендер панелей */}
-      <div className="section__panel-wrapper" ref={ref}>
-        {TABS_KEYS.map((key) => (
-          <div
-            key={key}
-            role="tabpanel"
-            className={
-              "section__panel" +
-              (key === activeTab ? "" : " section__panel_hidden")
-            }
-            aria-hidden={key === activeTab ? "false" : "true"}
-            id={`panel_${key}`}
-            aria-labelledby={`tab_${key}`}
-          >
-            <ul className="section__panel-list">
-              {key === activeTab ? renderTabItems : null}
-            </ul>
-          </div>
-        ))}
-        {hasRightScroll && (
-          <div className="section__arrow" onClick={onArrowClick}></div>
-        )}
-      </div>
-    </section>
+        {/* Оптимизируем рендер панелей */}
+        <div className="section__panel-wrapper" ref={ref}>
+          {TABS_KEYS.map((key) => (
+            <div
+              key={key}
+              role="tabpanel"
+              className={
+                "section__panel" +
+                (key === activeTab ? "" : " section__panel_hidden")
+              }
+              aria-hidden={key === activeTab ? "false" : "true"}
+              id={`panel_${key}`}
+              aria-labelledby={`tab_${key}`}
+            >
+              <ul className="section__panel-list">
+                {key === activeTab ? renderTabItems : null}
+              </ul>
+            </div>
+          ))}
+          {hasRightScroll && (
+            <div className="section__arrow" onClick={onArrowClick}></div>
+          )}
+        </div>
+      </section>
     </main>
   );
 });

@@ -42,7 +42,16 @@ export default {
   plugins: [
     new HtmlWebpackPlugin({
       template: './src/index.html',
-      minify: true
+      minify: {
+        collapseWhitespace: true,
+        removeComments: true,
+        removeRedundantAttributes: true,
+        removeScriptTypeAttributes: true,
+        removeStyleLinkTypeAttributes: true,
+        useShortDoctype: true,
+        minifyCSS: true,
+        minifyJS: true
+      }
     }),
     new MiniCssExtractPlugin({
       filename: 'css/styles.[contenthash].min.css',

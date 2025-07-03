@@ -7,6 +7,10 @@
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(540);
 /* harmony import */ var react_dom_client__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(338);
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function _arrayWithoutHoles(r) { if (Array.isArray(r)) return _arrayLikeToArray(r); }
 function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
@@ -78,9 +82,7 @@ var Event = /*#__PURE__*/(0,react__WEBPACK_IMPORTED_MODULE_0__.memo)(function Ev
     iconLabel = props.iconLabel,
     title = props.title,
     subtitle = props.subtitle;
-
-  // Используем useCallback для оптимизации колбэка
-  var handleSize = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(function () {
+  react__WEBPACK_IMPORTED_MODULE_0__.useEffect(function () {
     if (ref.current && onSize) {
       var width = ref.current.offsetWidth;
       var height = ref.current.offsetHeight;
@@ -90,9 +92,6 @@ var Event = /*#__PURE__*/(0,react__WEBPACK_IMPORTED_MODULE_0__.memo)(function Ev
       });
     }
   }, [onSize]);
-  react__WEBPACK_IMPORTED_MODULE_0__.useEffect(function () {
-    handleSize();
-  }, [handleSize]);
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("li", {
     ref: ref,
     className: "event" + (slim ? " event_slim" : "")
@@ -108,8 +107,6 @@ var Event = /*#__PURE__*/(0,react__WEBPACK_IMPORTED_MODULE_0__.memo)(function Ev
     className: "event__subtitle"
   }, subtitle)));
 });
-
-// Выносим константу TABS за пределы компонента, чтобы она не пересоздавалась
 var TABS = {
   all: {
     title: "Все",
@@ -230,6 +227,10 @@ var Main = /*#__PURE__*/(0,react__WEBPACK_IMPORTED_MODULE_0__.memo)(function Mai
     _React$useState8 = _slicedToArray(_React$useState7, 2),
     hasRightScroll = _React$useState8[0],
     setHasRightScroll = _React$useState8[1];
+  var _React$useState9 = react__WEBPACK_IMPORTED_MODULE_0__.useState([]),
+    _React$useState0 = _slicedToArray(_React$useState9, 2),
+    itemSizes = _React$useState0[0],
+    setItemSizes = _React$useState0[1];
   var onTabClick = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(function (key) {
     setActiveTab(key);
   }, []);
@@ -250,28 +251,35 @@ var Main = /*#__PURE__*/(0,react__WEBPACK_IMPORTED_MODULE_0__.memo)(function Mai
     var _TABS$activeTab;
     return ((_TABS$activeTab = TABS[activeTab]) === null || _TABS$activeTab === void 0 ? void 0 : _TABS$activeTab.items) || [];
   }, [activeTab]);
+  var handleSize = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(function (size, index) {
+    setItemSizes(function (prev) {
+      var newSizes = _toConsumableArray(prev);
+      newSizes[index] = size;
+      return newSizes;
+    });
+  }, []);
   var renderTabItems = (0,react__WEBPACK_IMPORTED_MODULE_0__.useMemo)(function () {
     return currentTabItems.map(function (item, index) {
       return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(Event, _extends({
         key: index
       }, item, {
-        onSize: handleSize
+        onSize: function onSize(size) {
+          return handleSize(size, index);
+        }
       }));
     });
-  }, [currentTabItems]);
-  var handleSize = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(function () {
-    if (ref.current) {
-      var items = ref.current.querySelectorAll(".event");
-      var sumWidth = 0;
-      items.forEach(function (item) {
-        sumWidth += item.offsetWidth;
-      });
-      var newHasRightScroll = sumWidth > ref.current.offsetWidth;
-      if (newHasRightScroll !== hasRightScroll) {
-        setHasRightScroll(newHasRightScroll);
-      }
+  }, [currentTabItems, handleSize]);
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(function () {
+    if (ref.current && itemSizes.length > 0) {
+      var panel = ref.current.querySelector(".section__panel:not(.section__panel_hidden)");
+      if (!panel) return;
+      var panelWidth = panel.offsetWidth;
+      var sumWidth = itemSizes.reduce(function (sum, size) {
+        return sum + ((size === null || size === void 0 ? void 0 : size.width) || 0);
+      }, 0);
+      setHasRightScroll(sumWidth > panelWidth);
     }
-  }, [hasRightScroll]);
+  }, [itemSizes, activeTab]);
   react__WEBPACK_IMPORTED_MODULE_0__.useEffect(function () {
     if (!activeTab && !initedRef.current) {
       initedRef.current = true;
