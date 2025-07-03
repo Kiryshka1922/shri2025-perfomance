@@ -12,7 +12,7 @@ export default {
   mode: 'production',
   entry: './src/App.jsx',
   output: {
-    filename: 'main.min.js',
+    filename: '[name].[contenthash].js',
     path: resolve(__dirname, 'dist'),
     clean: true,
     assetModuleFilename: 'assets/[hash][ext][query]'
@@ -22,16 +22,24 @@ export default {
   },
   module: {
     rules: [
-      // Обработка изображений из assets
       {
-        test: /\.(jpe?g|png|gif|svg)$/i,
-        include: resolve(__dirname, 'assets'),
-        type: 'asset/resource',
-        generator: {
-          filename: 'assets/images/[name][ext]',
-        },
+        test: /\.css$/i,
+        use: [
+          MiniCssExtractPlugin.loader,
+          'css-loader',
+          {
+            loader: 'postcss-loader',
+            options: {
+              postcssOptions: {
+                plugins: [
+                  'autoprefixer',
+                  'cssnano'
+                ]
+              }
+            }
+          }
+        ],
       },
-      // Обработка JS/JSX
       {
         test: /\.(js|jsx)$/,
         exclude: /node_modules/,
@@ -50,13 +58,16 @@ export default {
       minify: true
     }),
     new MiniCssExtractPlugin({
-      filename: 'css/styles.min.css',
+      filename: 'css/styles.[contenthash].min.css',
     }),
     new CopyPlugin({
       patterns: [
         {
           from: "src/assets",
           to: "assets",
+          filter: async (resourcePath) => {
+            return !/\.(jpe?g|png|gif|svg)$/i.test(resourcePath);
+          },
         }
       ],
     }),
@@ -71,11 +82,61 @@ export default {
           },
         },
       },
+      generator: [
+        {
+          preset: 'webp',
+          implementation: ImageMinimizerPlugin.sharpGenerate,
+          options: {
+            encodeOptions: {
+              webp: {
+                quality: 80,
+              },
+            },
+          },
+        },
+      ],
     }),
   ],
   optimization: {
     minimizer: [
       new CssMinimizerPlugin(),
     ],
-  },
+    runtimeChunk: 'single',
+    splitChunks: {
+      chunks: 'all',
+      minSize: 10000,
+      maxSize: 500000,
+      minChunks: 2,
+      maxAsyncRequests: 30,
+      maxInitialRequests: 30,
+      automaticNameDelimiter: '~',
+      cacheGroups: {
+        react: {
+          test: /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+          name: 'react',
+          chunks: 'all',
+          priority: 20,
+          enforce: true
+        },
+        vendors: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          chunks: 'all',
+          priority: 10,
+          reuseExistingChunk: true
+        },
+        default: {
+          minChunks: 2,
+          priority: -20,
+          reuseExistingChunk: true
+        },
+        styles: {
+          name: 'styles',
+          test: /\.css$/,
+          chunks: 'all',
+          enforce: true
+        }
+      }
+    },
+  }
 };
