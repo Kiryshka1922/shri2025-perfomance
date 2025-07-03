@@ -7,10 +7,6 @@
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(540);
 /* harmony import */ var react_dom_client__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(338);
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
-function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
-function _arrayWithoutHoles(r) { if (Array.isArray(r)) return _arrayLikeToArray(r); }
 function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
@@ -19,7 +15,9 @@ function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" !=
 function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 
 
-function Header() {
+
+// Оптимизируем Header с помощью memo, чтобы он не перерендеривался без необходимости
+var Header = /*#__PURE__*/(0,react__WEBPACK_IMPORTED_MODULE_0__.memo)(function Header() {
   var _React$useState = react__WEBPACK_IMPORTED_MODULE_0__.useState(false),
     _React$useState2 = _slicedToArray(_React$useState, 2),
     expanded = _React$useState2[0],
@@ -28,12 +26,16 @@ function Header() {
     _React$useState4 = _slicedToArray(_React$useState3, 2),
     toggled = _React$useState4[0],
     setToggled = _React$useState4[1];
-  var onClick = function onClick() {
+
+  // Оптимизируем обработчик клика с useCallback
+  var onClick = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(function () {
     if (!toggled) {
       setToggled(true);
     }
-    setExpanded(!expanded);
-  };
+    setExpanded(function (prev) {
+      return !prev;
+    });
+  }, [toggled]);
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("header", {
     className: "header"
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("a", {
@@ -65,35 +67,49 @@ function Header() {
     className: "header__link",
     href: "/scripts"
   }, "\u0421\u0446\u0435\u043D\u0430\u0440\u0438\u0438"))));
-}
-function Event(props) {
+});
+
+// Оптимизируем Event с помощью memo
+var Event = /*#__PURE__*/(0,react__WEBPACK_IMPORTED_MODULE_0__.memo)(function Event(props) {
   var ref = react__WEBPACK_IMPORTED_MODULE_0__.useRef();
-  var onSize = props.onSize;
-  react__WEBPACK_IMPORTED_MODULE_0__.useEffect(function () {
-    var width = ref.current.offsetWidth;
-    var height = ref.current.offsetHeight;
-    if (onSize) {
+  var onSize = props.onSize,
+    slim = props.slim,
+    icon = props.icon,
+    iconLabel = props.iconLabel,
+    title = props.title,
+    subtitle = props.subtitle;
+
+  // Используем useCallback для оптимизации колбэка
+  var handleSize = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(function () {
+    if (ref.current && onSize) {
+      var width = ref.current.offsetWidth;
+      var height = ref.current.offsetHeight;
       onSize({
         width: width,
         height: height
       });
     }
   }, [onSize]);
+  react__WEBPACK_IMPORTED_MODULE_0__.useEffect(function () {
+    handleSize();
+  }, [handleSize]);
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("li", {
     ref: ref,
-    className: "event" + (props.slim ? " event_slim" : "")
+    className: "event" + (slim ? " event_slim" : "")
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("button", {
     className: "event__button"
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("span", {
-    className: "event__icon event__icon_".concat(props.icon),
+    className: "event__icon event__icon_".concat(icon),
     role: "img",
-    "aria-label": props.iconLabel
+    "aria-label": iconLabel
   }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("h4", {
     className: "event__title"
-  }, props.title), props.subtitle && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("span", {
+  }, title), subtitle && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("span", {
     className: "event__subtitle"
-  }, props.subtitle)));
-}
+  }, subtitle)));
+});
+
+// Выносим константу TABS за пределы компонента, чтобы она не пересоздавалась
 var TABS = {
   all: {
     title: "Все",
@@ -203,7 +219,7 @@ var TABS = {
 };
 TABS.all.items = Array(Math.pow(2, 6)).fill(TABS.all.items).flat();
 var TABS_KEYS = Object.keys(TABS);
-function Main() {
+var Main = /*#__PURE__*/(0,react__WEBPACK_IMPORTED_MODULE_0__.memo)(function Main() {
   var ref = react__WEBPACK_IMPORTED_MODULE_0__.useRef();
   var initedRef = react__WEBPACK_IMPORTED_MODULE_0__.useRef(false);
   var _React$useState5 = react__WEBPACK_IMPORTED_MODULE_0__.useState(""),
@@ -214,39 +230,54 @@ function Main() {
     _React$useState8 = _slicedToArray(_React$useState7, 2),
     hasRightScroll = _React$useState8[0],
     setHasRightScroll = _React$useState8[1];
-  react__WEBPACK_IMPORTED_MODULE_0__.useEffect(function () {
-    if (!activeTab && !initedRef.current) {
-      initedRef.current = true;
-      setActiveTab(new URLSearchParams(location.search).get("tab") || "all");
-    }
-  });
-  var onSelectInput = function onSelectInput(event) {
-    setActiveTab(event.target.value);
-  };
-  var sizes = [];
-  var onSize = function onSize(size) {
-    sizes = [].concat(_toConsumableArray(sizes), [size]);
-  };
-  react__WEBPACK_IMPORTED_MODULE_0__.useEffect(function () {
-    var sumWidth = sizes.reduce(function (acc, item) {
-      return acc + item.width;
-    }, 0);
-    // const sumHeight = sizes.reduce((acc, item) => acc + item.height, 0);
-
-    var newHasRightScroll = sumWidth > ref.current.offsetWidth;
-    if (newHasRightScroll !== hasRightScroll) {
-      setHasRightScroll(newHasRightScroll);
-    }
-  }, [activeTab, setActiveTab]);
-  var onArrowCLick = function onArrowCLick() {
-    var scroller = ref.current.querySelector(".section__panel:not(.section__panel_hidden)");
+  var onTabClick = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(function (key) {
+    setActiveTab(key);
+  }, []);
+  var onArrowClick = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(function () {
+    var _ref$current;
+    var scroller = (_ref$current = ref.current) === null || _ref$current === void 0 ? void 0 : _ref$current.querySelector(".section__panel:not(.section__panel_hidden)");
     if (scroller) {
       scroller.scrollTo({
         left: scroller.scrollLeft + 400,
         behavior: "smooth"
       });
     }
+  }, []);
+  var onSelectInput = function onSelectInput(event) {
+    setActiveTab(event.target.value);
   };
+  var currentTabItems = (0,react__WEBPACK_IMPORTED_MODULE_0__.useMemo)(function () {
+    var _TABS$activeTab;
+    return ((_TABS$activeTab = TABS[activeTab]) === null || _TABS$activeTab === void 0 ? void 0 : _TABS$activeTab.items) || [];
+  }, [activeTab]);
+  var renderTabItems = (0,react__WEBPACK_IMPORTED_MODULE_0__.useMemo)(function () {
+    return currentTabItems.map(function (item, index) {
+      return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(Event, _extends({
+        key: index
+      }, item, {
+        onSize: handleSize
+      }));
+    });
+  }, [currentTabItems]);
+  var handleSize = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(function () {
+    if (ref.current) {
+      var items = ref.current.querySelectorAll(".event");
+      var sumWidth = 0;
+      items.forEach(function (item) {
+        sumWidth += item.offsetWidth;
+      });
+      var newHasRightScroll = sumWidth > ref.current.offsetWidth;
+      if (newHasRightScroll !== hasRightScroll) {
+        setHasRightScroll(newHasRightScroll);
+      }
+    }
+  }, [hasRightScroll]);
+  react__WEBPACK_IMPORTED_MODULE_0__.useEffect(function () {
+    if (!activeTab && !initedRef.current) {
+      initedRef.current = true;
+      setActiveTab(new URLSearchParams(location.search).get("tab") || "all");
+    }
+  }, [activeTab]);
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("main", {
     className: "main"
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("section", {
@@ -360,7 +391,7 @@ function Main() {
       id: "tab_".concat(key),
       "aria-controls": "panel_".concat(key),
       onClick: function onClick() {
-        return setActiveTab(key);
+        return onTabClick(key);
       }
     }, TABS[key].title);
   }))), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("div", {
@@ -376,20 +407,14 @@ function Main() {
       "aria-labelledby": "tab_".concat(key)
     }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("ul", {
       className: "section__panel-list"
-    }, TABS[key].items.map(function (item, index) {
-      return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(Event, _extends({
-        key: index
-      }, item, {
-        onSize: onSize
-      }));
-    })));
+    }, key === activeTab ? renderTabItems : null));
   }), hasRightScroll && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("div", {
     className: "section__arrow",
-    onClick: onArrowCLick
+    onClick: onArrowClick
   }))));
-}
+});
 var root = react_dom_client__WEBPACK_IMPORTED_MODULE_1__.createRoot(document.getElementById("app"));
-root.render(/*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(react__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(Header, null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(Main, null)));
+root.render(/*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(react__WEBPACK_IMPORTED_MODULE_0__.StrictMode, null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(Header, null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(Main, null)));
 
 /***/ })
 
