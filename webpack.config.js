@@ -24,21 +24,8 @@ export default {
     rules: [
       {
         test: /\.css$/i,
-        use: [
-          MiniCssExtractPlugin.loader,
-          'css-loader',
-          {
-            loader: 'postcss-loader',
-            options: {
-              postcssOptions: {
-                plugins: [
-                  'autoprefixer',
-                  'cssnano'
-                ]
-              }
-            }
-          }
-        ],
+        include: resolve(__dirname, 'src'),
+        use: [MiniCssExtractPlugin.loader, 'css-loader'],
       },
       {
         test: /\.(js|jsx)$/,
@@ -68,7 +55,11 @@ export default {
           filter: async (resourcePath) => {
             return !/\.(jpe?g|png|gif|svg)$/i.test(resourcePath);
           },
-        }
+        },
+        {
+          from: "src/*.css",
+          to: "[name][ext]",
+        },
       ],
     }),
     new ImageMinimizerPlugin({
