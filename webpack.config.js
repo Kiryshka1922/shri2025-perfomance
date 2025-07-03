@@ -53,7 +53,7 @@ export default {
           from: "src/assets",
           to: "assets",
           filter: async (resourcePath) => {
-            return !/\.(jpe?g|png|gif|svg)$/i.test(resourcePath);
+            return /\.(jpe?g|png|gif|svg|webp)$/i.test(resourcePath);
           },
         },
         {
